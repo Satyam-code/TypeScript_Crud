@@ -9,3 +9,5 @@ dist/
 
 # TypeScript
 *.tsbuildinfo
+
+public/js/
