@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity()
 export class User {
@@ -14,9 +14,13 @@ export class User {
   @Column({ nullable: true })
   age: number;
 
-  constructor(name: string, email: string, age: number) {
+  @Column()
+  password: string;
+
+  constructor(name: string, email: string, age: number, password: string) {
     this.name = name;
     this.email = email;
     this.age = age;
+    this.password = password;
   }
 }
