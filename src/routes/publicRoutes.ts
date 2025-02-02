@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import { User } from "../entities/User";
+import { sendEvent } from "../services/rabbitmqService";
 import bcrypt from "bcryptjs";
 
 const router = Router();
@@ -9,7 +10,6 @@ const router = Router();
 router.post("/users", async (req: Request, res: Response) => {
   try {
     const { name, email, age, password } = req.body;
-
     // Check if a user with the same email already exists
     const existingUser = await AppDataSource.manager.findOneBy(User, { email });
     if (existingUser) {
@@ -34,6 +34,20 @@ router.post("/users", async (req: Request, res: Response) => {
         email: user.email,
       },
     });
+
+    // Send event to RabbitMQ
+    await sendEvent(
+      "audit_logs",
+      JSON.stringify({
+        type: "USER_CREATED",
+        data: {
+          user_id: user.id,
+          email: user.email,
+          logData: "User Registered",
+          created_at: Date.now(),
+        },
+      })
+    );
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error creating user" });

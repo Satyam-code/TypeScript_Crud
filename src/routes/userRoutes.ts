@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { AppDataSource } from "../config/ormconfig";
 import { User } from "../entities/User";
+import { sendEvent } from "../services/rabbitmqService";
 import path from "path";
 
 const router = Router();
@@ -70,6 +71,19 @@ router.put("/users/:id", async (req, res) => {
           age: user.age,
         },
       });
+      // Send event to RabbitMQ
+      await sendEvent(
+        "audit_logs",
+        JSON.stringify({
+          type: "USER_UPDATED",
+          data: {
+            user_id: user.id,
+            email: user.email,
+            logData: "User Updated",
+            created_at: Date.now(),
+          },
+        })
+      );
     } else {
       res.status(404).json({ message: "User not found" });
     }
@@ -89,6 +103,19 @@ router.delete("/users/:id", async (req, res) => {
     if (user) {
       await AppDataSource.manager.remove(user);
       res.status(200).json({ message: "User deleted" });
+      // Send event to RabbitMQ
+      await sendEvent(
+        "audit_logs",
+        JSON.stringify({
+          type: "USER_DELETED",
+          data: {
+            user_id: id,
+            email: user.email,
+            logData: "User Deleted",
+            created_at: Date.now(),
+          },
+        })
+      );
     } else {
       res.status(404).json({ message: "User not found" });
     }
